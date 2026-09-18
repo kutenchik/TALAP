@@ -1,0 +1,80 @@
+import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router-dom';
+import { describe, expect, it, vi } from 'vitest';
+import { useProfileTestEnvironment } from './profileFixtures';
+import { App } from '../app/App';
+import { JourneyStepper } from '../components/JourneyStepper';
+import { Button, EmptyState, ErrorState, Field, Input, LoadingState, StatusPill } from '../components/ui';
+
+function renderApp(path = '/profile') {
+  return render(<MemoryRouter initialEntries={[path]}><App /></MemoryRouter>);
+}
+describe('desktop foundation', () => {
+  useProfileTestEnvironment();
+  it('renders Talap and the three desktop areas without reference branding', () => {
+    renderApp();
+    expect(screen.getByRole('link', { name: 'Talap home' })).toBeVisible();
+    expect(screen.queryByText(/Pathway AI/i)).not.toBeInTheDocument();
+    expect(screen.getByRole('complementary', { name: 'About Talap' })).toBeVisible();
+    expect(screen.getByRole('main', { name: 'Product workspace' })).toBeVisible();
+    expect(screen.getByRole('complementary', { name: 'Journey information' })).toBeVisible();
+  });
+  it('redirects the root to the profile and marks exactly one current step', () => {
+    renderApp('/');
+    const nav = screen.getByRole('navigation', { name: 'Application journey' });
+    expect(within(nav).getAllByRole('listitem')).toHaveLength(5);
+    expect(within(nav).getByRole('link', { current: 'step' })).toHaveTextContent('Profile');
+    expect(within(nav).queryByText('Completed')).not.toBeInTheDocument();
+  });
+  it('navigates every placeholder without claiming completion', async () => {
+    const user = userEvent.setup();
+    renderApp();
+    for (const title of ['Diagnostics', 'Recommendations', 'Compare', 'Roadmap']) {
+      const nav = screen.getByRole('navigation', { name: 'Application journey' });
+      await user.click(within(nav).getByRole('link', { name: new RegExp(title) }));
+      expect(screen.getByRole('heading', { name: title })).toBeVisible();
+      expect(screen.getByText('Coming in next frontend task')).toBeVisible();
+      expect(within(screen.getByRole('navigation', { name: 'Application journey' })).getByRole('link', { current: 'step' })).toHaveTextContent(title);
+      expect(within(nav).queryByText('Completed')).not.toBeInTheDocument();
+    }
+  });
+  it('associates labels with working profile controls', async () => {
+    renderApp();
+    expect(await screen.findByLabelText('Display name')).toBeEnabled();
+    for (const label of ['Citizenship country code *', 'GPA value', 'GPA scale', 'Estimated annual budget (USD)']) expect(screen.getByLabelText(label)).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Save and continue' })).toBeEnabled();
+  });
+  it('renders explicit completed, current, and future step states', () => {
+    render(<MemoryRouter><JourneyStepper currentStep={2} completedSteps={[1]} /></MemoryRouter>);
+    expect(screen.getByText('Completed')).toBeInTheDocument();
+    expect(screen.getByRole('link', { current: 'step' })).toHaveTextContent('Diagnostics');
+    expect(screen.getAllByRole('listitem')[4]).toHaveClass('step-future');
+  });
+  it('offers an accessible keyboard-operated primary button with safe default type', async () => {
+    const onClick = vi.fn();
+    const user = userEvent.setup();
+    render(<Button onClick={onClick}>Continue</Button>);
+    await user.tab();
+    expect(screen.getByRole('button', { name: 'Continue' })).toHaveFocus();
+    expect(screen.getByRole('button')).toHaveAttribute('type', 'button');
+    await user.keyboard('{Enter}');
+    expect(onClick).toHaveBeenCalledOnce();
+  });
+  it('links help and error descriptions to a field', () => {
+    render(<Field label="Name" help="Use your chosen name" error="Enter a name"><Input /></Field>);
+    expect(screen.getByLabelText('Name')).toHaveAccessibleDescription('Use your chosen name Enter a name');
+    expect(screen.getByLabelText('Name')).toHaveAttribute('aria-invalid', 'true');
+  });
+  it('renders feedback and truthful status components', async () => {
+    const retry = vi.fn();
+    render(<><LoadingState /><ErrorState message="Please try again later." onRetry={retry} /><EmptyState title="Nothing here yet" description="Add a profile to begin." /><StatusPill status="unavailable" /><StatusPill status="verification" /><StatusPill status="partial" /><StatusPill status="unevaluated" /></>);
+    expect(screen.getByRole('status')).toHaveTextContent('Loading');
+    expect(screen.getByRole('alert')).toHaveTextContent('Please try again later.');
+    expect(screen.getByRole('heading', { name: 'Nothing here yet' })).toBeVisible();
+    await userEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(retry).toHaveBeenCalledOnce();
+    for (const text of ['Unavailable', 'Needs verification', 'Partial evidence', 'Not evaluated']) expect(screen.getByText(text)).toBeVisible();
+  });
+});
+

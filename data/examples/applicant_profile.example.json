@@ -1,0 +1,43 @@
+{
+  "profile_key": "fictional-kz-student-001",
+  "display_name": "Fictional Student",
+  "citizenship_country_code": "KZ",
+  "residence_country_code": "KZ",
+  "school_country_code": "KZ",
+  "graduation_year": 2027,
+  "academics": {
+    "gpa_value": 4.7,
+    "gpa_scale": 5.0,
+    "gpa_weighting": "unknown",
+    "class_rank": null,
+    "class_size": null
+  },
+  "tests": [
+    {
+      "test_type": "ielts",
+      "scale": "ielts_0_9",
+      "score": 6.5,
+      "taken_on": "2026-07-01",
+      "note": "Fictional practice profile"
+    },
+    {
+      "test_type": "sat",
+      "scale": "sat_total_400_1600",
+      "score": 1420,
+      "taken_on": "2026-10-03"
+    }
+  ],
+  "study_intent": {
+    "mode": "known_major",
+    "intended_cip_codes": ["11.0701", "11.0701"],
+    "interests": []
+  },
+  "financial": {
+    "annual_budget_usd": 25000,
+    "needs_financial_aid": true
+  },
+  "preferences": {
+    "preferred_states": [" ca ", "MA", "CA"],
+    "excluded_states": []
+  }
+}

@@ -1,0 +1,11 @@
+.venv/
+.var/
+__pycache__/
+.pytest_cache/
+*.egg-info/
+*.py[cod]
+*.sqlite3
+*.db
+.env
+HD2024.zip
+_ipeds_hd2024/
