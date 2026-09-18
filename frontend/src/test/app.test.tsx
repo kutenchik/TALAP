@@ -27,10 +27,10 @@ describe('desktop foundation', () => {
     expect(within(nav).getByRole('link', { current: 'step' })).toHaveTextContent('Profile');
     expect(within(nav).queryByText('Completed')).not.toBeInTheDocument();
   });
-  it('navigates every placeholder without claiming completion', async () => {
+  it('navigates the remaining placeholders without claiming completion', async () => {
     const user = userEvent.setup();
     renderApp();
-    for (const title of ['Diagnostics', 'Recommendations', 'Compare', 'Roadmap']) {
+    for (const title of ['Compare', 'Roadmap']) {
       const nav = screen.getByRole('navigation', { name: 'Application journey' });
       await user.click(within(nav).getByRole('link', { name: new RegExp(title) }));
       expect(screen.getByRole('heading', { name: title })).toBeVisible();

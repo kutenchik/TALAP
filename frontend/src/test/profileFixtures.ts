@@ -1,5 +1,6 @@
 import { beforeEach, afterEach, vi } from 'vitest';
 import { LOCAL_PROFILE_KEY } from '../lib/profiles';
+import { clearJourneyCache } from '../lib/journey';
 import type { ApplicantProfileInput } from '../types/profile';
 
 // Fictional test data only; production forms have no applicant defaults.
@@ -36,10 +37,11 @@ export function mockProfileServer(initial: ApplicantProfileInput | null = null) 
 export function useProfileTestEnvironment() {
   beforeEach(() => {
     localStorage.clear();
+    clearJourneyCache();
     vi.stubEnv('VITE_API_BASE_URL', '');
     mockProfileServer();
   });
-  afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); localStorage.clear(); });
+  afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); localStorage.clear(); clearJourneyCache(); });
 }
 export function useSavedProfile() {
   const profile = profileFixture();

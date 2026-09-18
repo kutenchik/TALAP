@@ -95,7 +95,7 @@ describe('working profile', () => {
     await user.click(screen.getByRole('button', { name: 'Add interest' })); edit('Interest 1', 'AI / Technology');
     await user.click(screen.getByRole('button', { name: 'Add interest' })); edit('Interest 2', 'Social Impact');
     await user.click(submit());
-    await screen.findByRole('heading', { name: 'Diagnostics' });
+    await screen.findByRole('heading', { name: 'Your applicant diagnostic' });
     expect(postPayload(fetcher, '/api/v1/profiles/').study_intent).toEqual({ mode: 'explore', intended_cip_codes: [], interests: ['AI / Technology', 'Social Impact'] });
   });
 
@@ -125,7 +125,7 @@ describe('working profile', () => {
     expect(screen.getByLabelText('Preferred U.S. states')).toHaveValue('CA, NY, MA');
     edit('Excluded U.S. states', 'tx, fl');
     await userEvent.click(submit());
-    await screen.findByRole('heading', { name: 'Diagnostics' });
+    await screen.findByRole('heading', { name: 'Your applicant diagnostic' });
     const payload = postPayload(fetcher, '/api/v1/profiles/validate/');
     expect(payload.academics).toMatchObject({ gpa_value: 92, gpa_scale: 100 });
     expect(payload.tests).toEqual([
@@ -140,11 +140,11 @@ describe('working profile', () => {
     const view = renderProfile(); await ready();
     edit('Citizenship country code *', 'kz'); edit('Display name', 'Fictional Test');
     await userEvent.click(submit());
-    await screen.findByRole('heading', { name: 'Diagnostics' });
-    expect(server.fetcher.mock.calls.map(([url]) => url)).toEqual(['/api/v1/csrf/', '/api/v1/profiles/validate/', '/api/v1/profiles/']);
-    for (const [, options] of server.fetcher.mock.calls.slice(1)) expect(options).toMatchObject({ credentials: 'same-origin', headers: { 'X-CSRFToken': 'test-csrf-token' } });
+    await screen.findByRole('heading', { name: 'Your applicant diagnostic' });
+    await waitFor(() => expect(server.fetcher.mock.calls.map(([url]) => url)).toEqual(['/api/v1/csrf/', '/api/v1/profiles/validate/', '/api/v1/profiles/', expect.stringContaining('/journey/?seed_order_start=1&seed_order_end=100')]));
+    for (const [, options] of server.fetcher.mock.calls.slice(1, 3)) expect(options).toMatchObject({ credentials: 'same-origin', headers: { 'X-CSRFToken': 'test-csrf-token' } });
     expect(server.saved()).toMatchObject({ citizenship_country_code: 'KZ', display_name: 'Fictional Test', tests: [] });
-    expect(screen.queryByText('Completed')).not.toBeInTheDocument();
+    expect(screen.getByText('Completed')).toBeInTheDocument();
     view.unmount(); renderProfile(); await ready();
     expect(screen.getByLabelText('Display name')).toHaveValue('Fictional Test');
   });
@@ -155,7 +155,7 @@ describe('working profile', () => {
       .mockResolvedValueOnce(jsonResponse(normalized)).mockResolvedValueOnce(jsonResponse(normalized));
     vi.stubGlobal('fetch', fetcher);
     renderProfile(); await ready(); edit('Citizenship country code *', 'KZ');
-    await userEvent.click(submit()); await screen.findByRole('heading', { name: 'Diagnostics' });
+    await userEvent.click(submit()); await screen.findByRole('heading', { name: 'Your applicant diagnostic' });
     expect(JSON.parse(fetcher.mock.calls[2][1].body)).toEqual(normalized);
   });
 
@@ -223,7 +223,7 @@ describe('working profile', () => {
     expect(screen.getByRole('status')).toHaveTextContent('Validating and saving');
     expect(fetcher).toHaveBeenCalledTimes(1);
     await act(async () => release(jsonResponse({ csrfToken: 'token' })));
-    await screen.findByRole('heading', { name: 'Diagnostics' });
+    await screen.findByRole('heading', { name: 'Your applicant diagnostic' });
     expect(fetcher.mock.calls.filter(([url]) => url === '/api/v1/profiles/')).toHaveLength(1);
   });
 

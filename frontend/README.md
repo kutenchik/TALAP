@@ -47,7 +47,13 @@ Supported sections: display name/country codes/graduation year; known-major CIP 
 
 Saving calls GET `/csrf/`, POST `/profiles/validate/`, and then POST `/profiles/` with the backend-normalized validation response. Only successful save navigates to `/diagnostics`. A synchronous in-flight guard blocks duplicate submissions and the form is disabled while saving. Errors preserve edits and focus a role=alert summary. Backend validation locations map to field descriptions or associated group messages; unrecognized locations remain in the summary. Other errors use safe generic text, including non-JSON middleware errors.
 
-Journey links to other steps are disabled while edits are unsaved or saving. A beforeunload handler also requests the browser’s normal leave-page warning. This is a small development guard, not a full SPA history blocker. No progress is inferred from route visits; the shell deliberately supplies no completed steps.
+Journey links to other steps are disabled while edits are unsaved or saving. A beforeunload handler also requests the browser’s normal leave-page warning. This is a small development guard, not a full SPA history blocker. No progress is inferred from route visits; Diagnostics explicitly marks Profile complete only after a saved profile identity reaches the journey endpoint.
+
+## Journey and Diagnostics
+
+`src/types/journey.ts` mirrors the complete `AdmissionJourney` response, including diagnostics, recommendations, roadmap, and summary contracts for later frontend tasks. `loadJourney()` requests GET `/profiles/<key>/journey/?seed_order_start=1&seed_order_end=100`, validates the response shape, and shares one in-flight/cached promise per profile key. Failed requests are evicted so the page retry can request fresh data. Diagnostics reads, but never creates, `talap.localProfileKey`; an absent key or `profile_not_found` redirects to Profile.
+
+`/diagnostics` renders backend-supplied facts only: academics, ordered test attempts and distinct TOEFL scales, study direction, financial context, preferences, explicit excluded-state constraints, and missing information grouped by the backend importance value. `profile_preparation` keeps the user on a Profile completion path; `recommendations_ready` offers the route to Recommendations. No university evaluation, score, percentage, or inferred applicant strength is produced in the browser.
 
 ## CSRF and API
 
@@ -61,7 +67,7 @@ The browser uses `credentials: same-origin` and sends `X-CSRFToken` for both POS
 
 The accepted Talap shell, temporary replaceable compass wordmark, tokens, system fonts, and primitives remain in use. The profile uses labeled two-column desktop sections, keyboard-accessible native radio choices, repeatable field rows, an accessible error summary, and a right-aligned gradient CTA. The right panel explains profile inputs and local development identity. Styling is centralized in `src/styles/index.css`; no new dependencies were added.
 
-`/` redirects to `/profile`. `/diagnostics`, `/recommendations`, `/compare`, and `/roadmap` remain FE-001 placeholders. FE-003 owns real diagnostics. The layout targets 1280px and wider and scrolls vertically for the full profile. No mobile, accounts, favorites, university search, major inference, admission chances, or recommendation data were added.
+`/` redirects to `/profile`. `/diagnostics` is the real desktop diagnostic experience; `/recommendations`, `/compare`, and `/roadmap` remain placeholders for later tasks. The layout targets 1280px and wider and scrolls vertically for long content. No mobile, accounts, favorites, university search, major inference, admission chances, or recommendation cards were added.
 
 ## Verification
 

@@ -1,11 +1,17 @@
 import { ApiError, createApiClient } from './api';
 import type { ApplicantProfileInput, ApplicantProfileResponse } from '../types/profile';
 import type { CsrfResponse } from '../types/api';
+import { clearJourneyCache } from './journey';
 
 export const LOCAL_PROFILE_KEY = 'talap.localProfileKey';
 
+export function readLocalProfileKey(): string | null {
+  const key = localStorage.getItem(LOCAL_PROFILE_KEY)?.trim();
+  return key || null;
+}
+
 export function getLocalProfileKey(): { key: string; existing: boolean } {
-  const existing = localStorage.getItem(LOCAL_PROFILE_KEY);
+  const existing = readLocalProfileKey();
   if (existing) return { key: existing, existing: true };
   const key = `talap-local-${crypto.randomUUID()}`;
   // If storage is blocked, report it instead of silently generating a different identity on every visit.
@@ -37,5 +43,7 @@ export async function saveProfile(profile: ApplicantProfileInput, signal: AbortS
   }
   const validated = await api.post<ApplicantProfileResponse>('profiles/validate/', profile, csrf.csrfToken, signal);
   // Persist the backend-normalized representation; do not duplicate its validation.
-  return api.post<ApplicantProfileResponse>('profiles/', validated, csrf.csrfToken, signal);
+  const saved = await api.post<ApplicantProfileResponse>('profiles/', validated, csrf.csrfToken, signal);
+  clearJourneyCache();
+  return saved;
 }
