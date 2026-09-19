@@ -2,10 +2,12 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
-import { useProfileTestEnvironment } from './profileFixtures';
+import { jsonResponse, useProfileTestEnvironment } from './profileFixtures';
 import { App } from '../app/App';
 import { JourneyStepper } from '../components/JourneyStepper';
 import { Button, EmptyState, ErrorState, Field, Input, LoadingState, StatusPill } from '../components/ui';
+import { LOCAL_PROFILE_KEY } from '../lib/profiles';
+import { readyJourneyFixture } from './journeyFixtures';
 
 function renderApp(path = '/profile') {
   return render(<MemoryRouter initialEntries={[path]}><App /></MemoryRouter>);
@@ -27,17 +29,19 @@ describe('desktop foundation', () => {
     expect(within(nav).getByRole('link', { current: 'step' })).toHaveTextContent('Profile');
     expect(within(nav).queryByText('Completed')).not.toBeInTheDocument();
   });
-  it('navigates the remaining placeholders without claiming completion', async () => {
+  it('navigates to the real roadmap without claiming compare completion', async () => {
     const user = userEvent.setup();
+    const journey = readyJourneyFixture();
+    localStorage.setItem(LOCAL_PROFILE_KEY, journey.profile_key);
+    vi.stubGlobal('fetch', vi.fn(async () => jsonResponse(journey)));
     renderApp();
-    for (const title of ['Compare', 'Roadmap']) {
-      const nav = screen.getByRole('navigation', { name: 'Application journey' });
-      await user.click(within(nav).getByRole('link', { name: new RegExp(title) }));
-      expect(screen.getByRole('heading', { name: title })).toBeVisible();
-      expect(screen.getByText('Coming in next frontend task')).toBeVisible();
-      expect(within(screen.getByRole('navigation', { name: 'Application journey' })).getByRole('link', { current: 'step' })).toHaveTextContent(title);
-      expect(within(nav).queryByText('Completed')).not.toBeInTheDocument();
-    }
+    const nav = screen.getByRole('navigation', { name: 'Application journey' });
+    await user.click(within(nav).getByRole('link', { name: /Roadmap/ }));
+    expect(await screen.findByRole('heading', { name: 'Your admissions roadmap' })).toBeVisible();
+    expect(screen.getByText('No blocking actions are currently identified from the available evidence.')).toBeVisible();
+    expect(within(screen.getByRole('navigation', { name: 'Application journey' })).getByRole('link', { current: 'step' })).toHaveTextContent('Roadmap');
+    expect(screen.getAllByText('Completed')).toHaveLength(3);
+    expect(within(screen.getByRole('navigation', { name: 'Application journey' })).getAllByRole('listitem')[3]).toHaveClass('step-future');
   });
   it('associates labels with working profile controls', async () => {
     renderApp();

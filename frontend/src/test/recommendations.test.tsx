@@ -63,7 +63,7 @@ describe('university recommendations', () => {
     expect(screen.getByRole('checkbox', { name: 'Compare Test University 30' })).toBeDisabled();
     expect(JSON.parse(sessionStorage.getItem(COMPARE_STORAGE_KEY)!)).toEqual([40, 20, 60]);
     await userEvent.click(cta);
-    expect(screen.getByRole('heading', { name: 'Compare' })).toBeVisible();
+    expect(screen.getByRole('heading', { name: 'Compare universities' })).toBeVisible();
     view.unmount();
     setup();
     expect(await screen.findByRole('checkbox', { name: 'Compare Test University 40' })).toBeChecked();
