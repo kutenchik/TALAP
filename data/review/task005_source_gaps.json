@@ -14,7 +14,7 @@
     "institution_ipeds_unitid": 166027,
     "institution_name": "Harvard University",
     "active_official_source_urls": [
-      "https://college.harvard.edu/admissions/apply/international-applicants"
+      "https://college.harvard.edu/resources/faq/do-i-have-take-toefl"
     ],
     "source_status": "ready",
     "notes": null
@@ -64,7 +64,7 @@
     "institution_ipeds_unitid": 215062,
     "institution_name": "University of Pennsylvania",
     "active_official_source_urls": [
-      "https://admissions.upenn.edu/how-to-apply/international-applicants/guidelines"
+      "https://ask.admissions.upenn.edu/support/solutions/articles/157000361220-what-is-the-required-english-proficiency-testing-to-apply-to-penn-"
     ],
     "source_status": "ready",
     "notes": null
@@ -74,7 +74,7 @@
     "institution_ipeds_unitid": 190415,
     "institution_name": "Cornell University",
     "active_official_source_urls": [
-      "https://admissions.cornell.edu/policies/standardized-testing-policy"
+      "https://admissions.cornell.edu/resources/submit-english-language-proficiency"
     ],
     "source_status": "ready",
     "notes": null
@@ -84,7 +84,7 @@
     "institution_ipeds_unitid": 217156,
     "institution_name": "Brown University",
     "active_official_source_urls": [
-      "https://admission.brown.edu/international/english-proficiency"
+      "https://bulletin.brown.edu/the-college/"
     ],
     "source_status": "ready",
     "notes": null

@@ -14,7 +14,7 @@ import httpx
 import trafilatura
 
 
-DEFAULT_USER_AGENT = "PersonalAdmissionJourneyBot/0.1"
+DEFAULT_USER_AGENT = "TalapAdmissionsData/1.0 (+https://github.com/kutenchik/TALAP)"
 
 
 @dataclass(frozen=True)
@@ -56,7 +56,11 @@ class WebFetcher:
         self.client = client or httpx.Client(
             follow_redirects=True,
             timeout=httpx.Timeout(timeout_seconds),
-            headers={"User-Agent": user_agent},
+            headers={
+                "User-Agent": user_agent,
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                "Accept-Language": "en-US,en;q=0.9",
+            },
         )
 
     @staticmethod
@@ -106,20 +110,26 @@ class WebFetcher:
         parts = urlsplit(url)
         robots_url = f"{parts.scheme}://{parts.netloc}/robots.txt"
         metadata_path, content_path = self._cache_paths(f"robots:{robots_url}")
-        try:
-            if content_path.exists():
-                body = content_path.read_text(encoding="utf-8")
-                status = json.loads(metadata_path.read_text(encoding="utf-8")).get("http_status", 200)
-            else:
-                response = self.client.get(robots_url)
-                status = response.status_code
-                body = response.text if response.status_code == 200 else ""
-                metadata_path.parent.mkdir(parents=True, exist_ok=True)
-                content_path.write_text(body, encoding="utf-8")
-                metadata_path.write_text(json.dumps({"http_status": status}, sort_keys=True), encoding="utf-8")
-        except httpx.HTTPError as exc:
-            # A transient robots retrieval problem is recorded, not used to bypass a disallow.
-            return False, f"robots retrieval failed: {exc.__class__.__name__}"
+        if content_path.exists():
+            body = content_path.read_text(encoding="utf-8")
+            status = json.loads(metadata_path.read_text(encoding="utf-8")).get("http_status", 200)
+        else:
+            status = None
+            last_exc = None
+            for _ in range(self.retries + 1):
+                try:
+                    response = self.client.get(robots_url)
+                    status = response.status_code
+                    body = response.text if response.status_code == 200 else ""
+                    metadata_path.parent.mkdir(parents=True, exist_ok=True)
+                    content_path.write_text(body, encoding="utf-8")
+                    metadata_path.write_text(json.dumps({"http_status": status}, sort_keys=True), encoding="utf-8")
+                    break
+                except httpx.HTTPError as exc:
+                    last_exc = exc
+            if status is None:
+                # A transient robots retrieval problem is recorded, not used to bypass a disallow.
+                return False, f"robots retrieval failed: {last_exc.__class__.__name__ if last_exc else 'HTTPError'}"
         if status != 200:
             return True, f"robots unavailable (HTTP {status}); no disallow document provided"
         parser = RobotFileParser()

@@ -917,6 +917,7 @@ def fetch_official_sources(
     *,
     unitids: set[int] | list[int] | None = None,
     fetcher: WebFetcher | None = None,
+    refresh: bool = False,
 ) -> dict[str, int]:
     """Fetch a reviewed pilot subset while persisting only metadata/provenance in the database."""
 
@@ -926,13 +927,20 @@ def fetch_official_sources(
     for seed in seeds:
         institution = Institution.objects.get(ipeds_unitid=seed.institution_ipeds_unitid)
         source_seed = _seed_for_institution(institution.id)
-        DataIssue.objects.filter(seed_entry=source_seed, issue_type=DataIssue.IssueType.SOURCE_FETCH_FAILED, issue_key=seed.url).delete()
+        other_active_urls = [s.url for s in seeds if s.institution_ipeds_unitid == seed.institution_ipeds_unitid and s.url != seed.url]
+        DataIssue.objects.filter(seed_entry=source_seed, issue_type=DataIssue.IssueType.SOURCE_FETCH_FAILED).exclude(issue_key__in=other_active_urls).delete()
         counts["attempted"] += 1
-        result = fetcher.fetch(seed.url)
+        result = fetcher.fetch(seed.url, refresh=refresh)
         if not result.content or result.http_status is None or not _allowed_final_host(result.final_url, seed.allowed_hosts):
             detail = result.error or f"Redirected to unapproved host {urlparse(result.final_url).hostname!r}."
             _upsert_issue(source_seed, DataIssue.IssueType.SOURCE_FETCH_FAILED, detail, issue_key=seed.url)
             counts["failed"] += 1
+            source = SourceDocument.objects.filter(institution=institution, url=seed.url, source_type=PILOT_ENGLISH_SOURCE_TYPE).first()
+            if source is not None:
+                source.http_status = result.http_status
+                source.content_hash = ""
+                source.retrieved_at = datetime.now(timezone.utc)
+                source.save(update_fields=["http_status", "content_hash", "retrieved_at"])
             continue
         page = extract_page(result.content)
         source_defaults = {
@@ -1598,7 +1606,11 @@ def export_english_requirements(path: Path) -> int:
 
 def export_sources(path: Path) -> int:
     path.parent.mkdir(parents=True, exist_ok=True)
-    sources = SourceDocument.objects.filter(source_type=PILOT_ENGLISH_SOURCE_TYPE).select_related("institution").order_by("institution__ipeds_unitid", "url")
+    sources = SourceDocument.objects.filter(
+        source_type=PILOT_ENGLISH_SOURCE_TYPE,
+        content_hash__gt="",
+        http_status=200,
+    ).select_related("institution").order_by("institution__ipeds_unitid", "url")
     with path.open("w", encoding="utf-8", newline="\n") as handle:
         for source in sources:
             record = {

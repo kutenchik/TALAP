@@ -1,0 +1,272 @@
+[
+  {
+    "seed_order": 1,
+    "institution_ipeds_unitid": 166683,
+    "institution_name": "Massachusetts Institute of Technology",
+    "official_source_url": "https://mitadmissions.org/apply/firstyear/tests-scores/",
+    "source_status": "ready",
+    "fetch_status": "fetched",
+    "english_status": "verified",
+    "unresolved_reasons": []
+  },
+  {
+    "seed_order": 2,
+    "institution_ipeds_unitid": 166027,
+    "institution_name": "Harvard University",
+    "official_source_url": "https://college.harvard.edu/resources/faq/do-i-have-take-toefl",
+    "source_status": "ready",
+    "fetch_status": "failed",
+    "english_status": "extraction_failed",
+    "unresolved_reasons": [
+      "source_fetch_failed"
+    ]
+  },
+  {
+    "seed_order": 3,
+    "institution_ipeds_unitid": 243744,
+    "institution_name": "Stanford University",
+    "official_source_url": "https://admission.stanford.edu/apply/international/index.html",
+    "source_status": "ready",
+    "fetch_status": "fetched",
+    "english_status": "extraction_failed",
+    "unresolved_reasons": [
+      "evidence_validation_failed"
+    ]
+  },
+  {
+    "seed_order": 4,
+    "institution_ipeds_unitid": 186131,
+    "institution_name": "Princeton University",
+    "official_source_url": "https://admission.princeton.edu/apply/international-students",
+    "source_status": "ready",
+    "fetch_status": "fetched",
+    "english_status": "not_found",
+    "unresolved_reasons": []
+  },
+  {
+    "seed_order": 5,
+    "institution_ipeds_unitid": 130794,
+    "institution_name": "Yale University",
+    "official_source_url": "https://admissions.yale.edu/standardized-testing",
+    "source_status": "ready",
+    "fetch_status": "fetched",
+    "english_status": "not_found",
+    "unresolved_reasons": []
+  },
+  {
+    "seed_order": 6,
+    "institution_ipeds_unitid": 190150,
+    "institution_name": "Columbia University in the City of New York",
+    "official_source_url": "https://undergrad.admissions.columbia.edu/apply/international/english-proficiency",
+    "source_status": "ready",
+    "fetch_status": "failed",
+    "english_status": "extraction_failed",
+    "unresolved_reasons": [
+      "source_fetch_failed"
+    ]
+  },
+  {
+    "seed_order": 7,
+    "institution_ipeds_unitid": 215062,
+    "institution_name": "University of Pennsylvania",
+    "official_source_url": "https://ask.admissions.upenn.edu/support/solutions/articles/157000361220-what-is-the-required-english-proficiency-testing-to-apply-to-penn-",
+    "source_status": "ready",
+    "fetch_status": "fetched",
+    "english_status": "not_found",
+    "unresolved_reasons": []
+  },
+  {
+    "seed_order": 8,
+    "institution_ipeds_unitid": 190415,
+    "institution_name": "Cornell University",
+    "official_source_url": "https://admissions.cornell.edu/resources/submit-english-language-proficiency",
+    "source_status": "ready",
+    "fetch_status": "failed",
+    "english_status": "extraction_failed",
+    "unresolved_reasons": [
+      "source_fetch_failed"
+    ]
+  },
+  {
+    "seed_order": 9,
+    "institution_ipeds_unitid": 217156,
+    "institution_name": "Brown University",
+    "official_source_url": "https://bulletin.brown.edu/the-college/",
+    "source_status": "ready",
+    "fetch_status": "fetched",
+    "english_status": "not_found",
+    "unresolved_reasons": []
+  },
+  {
+    "seed_order": 10,
+    "institution_ipeds_unitid": 182670,
+    "institution_name": "Dartmouth College",
+    "official_source_url": "https://admissions.dartmouth.edu/glossary-question/if-english-not-my-first-language-am-i-required-submit-language-proficiency-test",
+    "source_status": "ready",
+    "fetch_status": "fetched",
+    "english_status": "no_minimum_published",
+    "unresolved_reasons": []
+  },
+  {
+    "seed_order": 11,
+    "institution_ipeds_unitid": 198419,
+    "institution_name": "Duke University",
+    "official_source_url": "https://admissions.duke.edu/apply/",
+    "source_status": "ready",
+    "fetch_status": "fetched",
+    "english_status": "not_found",
+    "unresolved_reasons": []
+  },
+  {
+    "seed_order": 12,
+    "institution_ipeds_unitid": 147767,
+    "institution_name": "Northwestern University",
+    "official_source_url": "https://admissions.northwestern.edu/faqs/international-applicants/",
+    "source_status": "ready",
+    "fetch_status": "fetched",
+    "english_status": "no_minimum_published",
+    "unresolved_reasons": []
+  },
+  {
+    "seed_order": 13,
+    "institution_ipeds_unitid": 227757,
+    "institution_name": "Rice University",
+    "official_source_url": "https://admission.rice.edu/apply/first-year-international-applicants",
+    "source_status": "ready",
+    "fetch_status": "fetched",
+    "english_status": "verified",
+    "unresolved_reasons": []
+  },
+  {
+    "seed_order": 14,
+    "institution_ipeds_unitid": 221999,
+    "institution_name": "Vanderbilt University",
+    "official_source_url": "https://admissions.vanderbilt.edu/apply/first-year-process/",
+    "source_status": "ready",
+    "fetch_status": "fetched",
+    "english_status": "not_found",
+    "unresolved_reasons": []
+  },
+  {
+    "seed_order": 15,
+    "institution_ipeds_unitid": 179867,
+    "institution_name": "Washington University in St Louis",
+    "official_source_url": "https://admissions.washu.edu/how-to-apply/english-testing-requirements/",
+    "source_status": "ready",
+    "fetch_status": "failed",
+    "english_status": "extraction_failed",
+    "unresolved_reasons": [
+      "source_fetch_failed"
+    ]
+  },
+  {
+    "seed_order": 16,
+    "institution_ipeds_unitid": 211440,
+    "institution_name": "Carnegie Mellon University",
+    "official_source_url": "https://admission.enrollment.cmu.edu/admission/admission/standardized-testing",
+    "source_status": "ready",
+    "fetch_status": "fetched",
+    "english_status": "extraction_failed",
+    "unresolved_reasons": [
+      "extraction_failed"
+    ]
+  },
+  {
+    "seed_order": 17,
+    "institution_ipeds_unitid": 152080,
+    "institution_name": "University of Notre Dame",
+    "official_source_url": "https://admissions.nd.edu/apply/resources-for/international-applicants/application-information/",
+    "source_status": "ready",
+    "fetch_status": "fetched",
+    "english_status": "not_found",
+    "unresolved_reasons": []
+  },
+  {
+    "seed_order": 18,
+    "institution_ipeds_unitid": 131496,
+    "institution_name": "Georgetown University",
+    "official_source_url": "https://uadmissions.georgetown.edu/apply/international-applicants/",
+    "source_status": "ready",
+    "fetch_status": "failed",
+    "english_status": "extraction_failed",
+    "unresolved_reasons": [
+      "source_fetch_failed"
+    ]
+  },
+  {
+    "seed_order": 19,
+    "institution_ipeds_unitid": 139658,
+    "institution_name": "Emory University",
+    "official_source_url": "https://apply.emory.edu/apply/requirements/exams",
+    "source_status": "ready",
+    "fetch_status": "fetched",
+    "english_status": "not_found",
+    "unresolved_reasons": []
+  },
+  {
+    "seed_order": 20,
+    "institution_ipeds_unitid": 193900,
+    "institution_name": "New York University",
+    "official_source_url": "https://www.nyu.edu/admissions/undergraduate-admissions/how-to-apply/standardized-tests/english-language-testing.html",
+    "source_status": "ready",
+    "fetch_status": "failed",
+    "english_status": "extraction_failed",
+    "unresolved_reasons": [
+      "source_fetch_failed"
+    ]
+  },
+  {
+    "seed_order": 21,
+    "institution_ipeds_unitid": 123961,
+    "institution_name": "University of Southern California",
+    "official_source_url": "https://admission.usc.edu/prospective-students/how-to-apply/international-students/",
+    "source_status": "ready",
+    "fetch_status": "failed",
+    "english_status": "extraction_failed",
+    "unresolved_reasons": [
+      "source_fetch_failed"
+    ]
+  },
+  {
+    "seed_order": 22,
+    "institution_ipeds_unitid": 164988,
+    "institution_name": "Boston University",
+    "official_source_url": "https://www.bu.edu/admissions/apply/international/",
+    "source_status": "ready",
+    "fetch_status": "fetched",
+    "english_status": "verified",
+    "unresolved_reasons": []
+  },
+  {
+    "seed_order": 23,
+    "institution_ipeds_unitid": 167358,
+    "institution_name": "Northeastern University",
+    "official_source_url": "https://catalog.northeastern.edu/undergraduate/admission/admission-policy-entrance-requirements/",
+    "source_status": "ready",
+    "fetch_status": "fetched",
+    "english_status": "not_found",
+    "unresolved_reasons": []
+  },
+  {
+    "seed_order": 24,
+    "institution_ipeds_unitid": 168148,
+    "institution_name": "Tufts University",
+    "official_source_url": "https://admissions.tufts.edu/apply/applying-as-an-international-s/",
+    "source_status": "ready",
+    "fetch_status": "fetched",
+    "english_status": "no_minimum_published",
+    "unresolved_reasons": []
+  },
+  {
+    "seed_order": 25,
+    "institution_ipeds_unitid": 201645,
+    "institution_name": "Case Western Reserve University",
+    "official_source_url": "https://case.edu/admission/apply/international-applicants",
+    "source_status": "ready",
+    "fetch_status": "failed",
+    "english_status": "extraction_failed",
+    "unresolved_reasons": [
+      "source_fetch_failed"
+    ]
+  }
+]

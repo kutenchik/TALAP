@@ -5,8 +5,8 @@ from pathlib import Path
 from typing import Literal, TypedDict
 from urllib.parse import urlparse
 
-from admission.catalog.models import SeedInstitution
-from admission.catalog.services import load_official_source_seeds
+from admission.catalog.models import DataIssue, EnglishRequirement, SeedInstitution, SourceDocument
+from admission.catalog.services import PILOT_ENGLISH_SOURCE_TYPE, load_official_source_seeds
 
 
 class SourceGap(TypedDict):
@@ -89,3 +89,123 @@ def export_source_gaps(source_path: Path, output: Path, start: int, end: int) ->
     output.write_text(json.dumps(rows, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     ready = sum(row["source_status"] == "ready" for row in rows)
     return {"batch_size": len(rows), "source_ready": ready, "source_missing": len(rows) - ready}
+
+
+class BatchStatusRow(TypedDict):
+    seed_order: int
+    institution_ipeds_unitid: int
+    institution_name: str
+    official_source_url: str | None
+    source_status: Literal["ready", "missing"]
+    fetch_status: Literal["fetched", "failed", "not_attempted"]
+    english_status: Literal[
+        "verified",
+        "no_minimum_published",
+        "not_found",
+        "not_required",
+        "conflicting",
+        "extraction_failed",
+        "not_attempted",
+    ]
+    unresolved_reasons: list[str]
+
+
+def batch_status_rows(source_path: Path, start: int, end: int) -> list[BatchStatusRow]:
+    entries = select_seed_batch(start, end)
+    seeds = load_official_source_seeds(source_path)
+    rows: list[BatchStatusRow] = []
+    for entry in entries:
+        institution = entry.institution
+        selected = [seed for seed in seeds if seed.institution_ipeds_unitid == institution.ipeds_unitid]
+        if not selected:
+            rows.append({
+                "seed_order": entry.seed_order,
+                "institution_ipeds_unitid": institution.ipeds_unitid,
+                "institution_name": institution.name,
+                "official_source_url": None,
+                "source_status": "missing",
+                "fetch_status": "not_attempted",
+                "english_status": "not_attempted",
+                "unresolved_reasons": ["source_not_found"],
+            })
+            continue
+
+        seed = selected[0]
+        source = SourceDocument.objects.filter(
+            institution=institution,
+            url=seed.url,
+            source_type=PILOT_ENGLISH_SOURCE_TYPE,
+        ).first()
+
+        fetch_failed = (
+            source is None
+            or not source.content_hash
+            or source.http_status != 200
+        )
+
+        if fetch_failed:
+            rows.append({
+                "seed_order": entry.seed_order,
+                "institution_ipeds_unitid": institution.ipeds_unitid,
+                "institution_name": institution.name,
+                "official_source_url": seed.url,
+                "source_status": "ready",
+                "fetch_status": "failed",
+                "english_status": "extraction_failed",
+                "unresolved_reasons": ["source_fetch_failed"],
+            })
+            continue
+
+        reqs = list(EnglishRequirement.objects.filter(
+            institution=institution,
+            source=source,
+            source_content_hash=source.content_hash,
+        ))
+
+        if any(r.status == EnglishRequirement.Status.VERIFIED for r in reqs):
+            english_status = "verified"
+            unresolved_reasons = []
+        elif any(r.status == EnglishRequirement.Status.NO_MINIMUM_PUBLISHED for r in reqs):
+            english_status = "no_minimum_published"
+            unresolved_reasons = []
+        elif any(r.status == EnglishRequirement.Status.NOT_REQUIRED for r in reqs):
+            english_status = "not_required"
+            unresolved_reasons = []
+        elif any(r.status == EnglishRequirement.Status.NOT_FOUND for r in reqs):
+            english_status = "not_found"
+            unresolved_reasons = []
+        elif any(r.status == EnglishRequirement.Status.CONFLICTING for r in reqs):
+            english_status = "conflicting"
+            unresolved_reasons = ["conflicting_official_sources"]
+        else:
+            english_status = "extraction_failed"
+            issues = list(DataIssue.objects.filter(
+                seed_entry=entry,
+                issue_type=DataIssue.IssueType.ENGLISH_EXTRACTION_REVIEW,
+            ))
+            if any("evidence" in iss.detail.lower() or "candidate" in iss.detail.lower() for iss in issues):
+                unresolved_reasons = ["evidence_validation_failed"]
+            else:
+                unresolved_reasons = ["extraction_failed"]
+
+        rows.append({
+            "seed_order": entry.seed_order,
+            "institution_ipeds_unitid": institution.ipeds_unitid,
+            "institution_name": institution.name,
+            "official_source_url": seed.url,
+            "source_status": "ready",
+            "fetch_status": "fetched",
+            "english_status": english_status,
+            "unresolved_reasons": unresolved_reasons,
+        })
+    return rows
+
+
+def export_batch_status(source_path: Path, output: Path, start: int, end: int) -> dict[str, int]:
+    rows = batch_status_rows(source_path, start, end)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(json.dumps(rows, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    verified = sum(row["english_status"] == "verified" for row in rows)
+    fetched = sum(row["fetch_status"] == "fetched" for row in rows)
+    unresolved = sum(bool(row["unresolved_reasons"]) for row in rows)
+    return {"batch_size": len(rows), "fetched": fetched, "verified": verified, "unresolved": unresolved}

@@ -1091,3 +1091,69 @@ For tests effective January 2026, the minimum overall score is 80."""
             candidate = EnglishRequirementCandidate(test_type="toefl_ibt", minimum_score=score, score_scale="toefl_ibt_0_120", status="found", evidence=source_text)
             with self.subTest(source_text=source_text):
                 self.assertTrue(validate_english_evidence(candidate, source_text)[0])
+
+    def test_robots_retries_on_transient_connection_error(self) -> None:
+        attempts = 0
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            nonlocal attempts
+            if request.url.path == "/robots.txt":
+                attempts += 1
+                if attempts == 1:
+                    raise httpx.ConnectError("transient connection glitch", request=request)
+                return httpx.Response(200, text="User-agent: *\nAllow: /", request=request)
+            return httpx.Response(200, text=HTML, request=request)
+
+        fetcher = WebFetcher(
+            cache_root=self.root / "cache",
+            client=httpx.Client(transport=httpx.MockTransport(handler), follow_redirects=True),
+            respect_robots=True,
+            retries=1,
+        )
+        result = fetcher.fetch("https://example.edu/english")
+        self.assertEqual(result.http_status, 200)
+        self.assertEqual(attempts, 2)
+
+    def test_default_user_agent_contains_truthful_identity_and_no_browser_impersonation(self) -> None:
+        from admission.catalog.web import DEFAULT_USER_AGENT
+
+        self.assertIn("Talap", DEFAULT_USER_AGENT)
+        for browser in ("Chrome", "Firefox", "Safari", "Edge", "Mozilla"):
+            self.assertNotIn(browser, DEFAULT_USER_AGENT)
+        fetcher = WebFetcher()
+        self.assertEqual(fetcher.user_agent, DEFAULT_USER_AGENT)
+
+    def test_batch_status_audits_runtime_resolution_and_unresolved_reasons(self) -> None:
+        from admission.catalog.source_batches import batch_status_rows, export_batch_status
+
+        rows = batch_status_rows(self.seed_path, 1, 1)
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["source_status"], "ready")
+        self.assertEqual(rows[0]["fetch_status"], "failed")
+        self.assertEqual(rows[0]["english_status"], "extraction_failed")
+        self.assertEqual(rows[0]["unresolved_reasons"], ["source_fetch_failed"])
+
+        fetcher = self.seed_and_fetch()
+        payload = json.loads(self.valid_response())
+        payload["requirements"][0]["evidence"] = "hallucinated ielts evidence not in html"
+        payload["requirements"][1]["evidence"] = "hallucinated toefl evidence not in html"
+        payload["requirements"][2]["evidence"] = "hallucinated det evidence not in html"
+        client = FakeEnglishClient([json.dumps(payload)])
+        enrich_english_requirements(self.seed_path, client, fetcher=fetcher)
+        rows = batch_status_rows(self.seed_path, 1, 1)
+        self.assertEqual(rows[0]["fetch_status"], "fetched")
+        self.assertEqual(rows[0]["english_status"], "extraction_failed")
+        self.assertEqual(rows[0]["unresolved_reasons"], ["evidence_validation_failed"])
+
+        valid_client = FakeEnglishClient([self.valid_response()])
+        enrich_english_requirements(self.seed_path, valid_client, fetcher=fetcher)
+        rows = batch_status_rows(self.seed_path, 1, 1)
+        self.assertEqual(rows[0]["fetch_status"], "fetched")
+        self.assertEqual(rows[0]["english_status"], "verified")
+        self.assertEqual(rows[0]["unresolved_reasons"], [])
+
+        out1 = self.root / "status1.json"
+        out2 = self.root / "status2.json"
+        export_batch_status(self.seed_path, out1, 1, 1)
+        export_batch_status(self.seed_path, out2, 1, 1)
+        self.assertEqual(out1.read_bytes(), out2.read_bytes())

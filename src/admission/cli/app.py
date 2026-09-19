@@ -28,7 +28,7 @@ from admission.catalog.services import (
     status_counts,
     status_rows,
 )
-from admission.catalog.source_batches import export_source_gaps, resolve_source_selection
+from admission.catalog.source_batches import export_batch_status, export_source_gaps, resolve_source_selection
 from admission.applicants.diagnostics import diagnose_profile
 from admission.applicants.models import ApplicantProfile
 from admission.applicants.services import export_profile, import_profile, load_profile
@@ -269,11 +269,12 @@ def fetch_sources_command(
     unitid: list[int] = typer.Option([], "--unitid", help="Repeat to select a reviewed subset."),
     seed_order_start: int | None = typer.Option(None, help="Inclusive first canonical seed order."),
     seed_order_end: int | None = typer.Option(None, help="Inclusive last canonical seed order."),
+    refresh: bool = typer.Option(False, "--refresh", help="Force fresh fetch bypassing local cache."),
 ) -> None:
     """Fetch reviewed official sources with robots checks, retries, and ignored local cache."""
     selected = _source_selection(unitid, seed_order_start, seed_order_end)
     try:
-        results = fetch_official_sources(source_seeds, unitids=selected)
+        results = fetch_official_sources(source_seeds, unitids=selected, refresh=refresh)
     except ValueError as exc:
         raise typer.BadParameter(str(exc)) from exc
     typer.echo(" ".join(f"{key}={value}" for key, value in results.items()))
@@ -331,6 +332,21 @@ def source_gaps_command(
     """Audit the active reviewed source list without HTTP or LLM access."""
     try:
         result = export_source_gaps(source_seeds, path, seed_order_start, seed_order_end)
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(" ".join(f"{key}={value}" for key, value in result.items()))
+
+
+@data_app.command("batch-status")
+def batch_status_command(
+    seed_order_start: int = typer.Option(..., help="Inclusive first canonical seed order."),
+    seed_order_end: int = typer.Option(..., help="Inclusive last canonical seed order."),
+    path: Path = typer.Option(Path("data/review/task005_english_batch_status.json"), help="Batch status JSON output."),
+    source_seeds: Path = typer.Option(Path("data/source_seeds/official_urls.jsonl"), exists=True, readable=True),
+) -> None:
+    """Export machine-readable runtime batch resolution status."""
+    try:
+        result = export_batch_status(source_seeds, path, seed_order_start, seed_order_end)
     except ValueError as exc:
         raise typer.BadParameter(str(exc)) from exc
     typer.echo(" ".join(f"{key}={value}" for key, value in result.items()))
