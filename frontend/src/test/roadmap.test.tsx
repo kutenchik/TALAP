@@ -100,11 +100,12 @@ describe('admissions roadmap', () => {
     expect(screen.getByRole('link', { name: 'Back to recommendations' })).toHaveAttribute('href', '/recommendations');
   });
 
-  it('marks Compare complete only for a valid current local comparison and keeps navigation working', async () => {
+  it('keeps Compare optional even with selected universities and keeps navigation working', async () => {
     setup(universityActionsJourney(), [40, 10, 20]);
     await screen.findByRole('heading', { name: 'Your admissions roadmap' });
     const nav = screen.getByRole('navigation', { name: 'Application journey' });
-    expect(within(nav).getAllByText('Completed')).toHaveLength(4);
+    expect(within(nav).getAllByText('Completed')).toHaveLength(3);
+    expect(within(nav).getAllByRole('listitem')[3]).toHaveClass('step-future');
     await userEvent.click(screen.getByRole('link', { name: 'Back to recommendations' }));
     expect(await screen.findByRole('heading', { name: 'Your university recommendations' })).toBeVisible();
   });

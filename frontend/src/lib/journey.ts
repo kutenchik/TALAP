@@ -1,4 +1,4 @@
-import { createApiClient } from './api';
+import { ApiError, createApiClient } from './api';
 import type { AdmissionJourney, ApplicantDiagnostic, JourneySummary, RecommendationSet, Roadmap } from '../types/journey';
 
 export class InvalidJourneyResponseError extends Error {
@@ -9,6 +9,29 @@ export class InvalidJourneyResponseError extends Error {
 }
 
 const requests = new Map<string, Promise<AdmissionJourney>>();
+export type JourneyLoadState =
+  | { status: 'loading' }
+  | { status: 'ready'; journey: AdmissionJourney }
+  | { status: 'error'; message: string; profileMissing?: boolean };
+export interface JourneySnapshot { savedProfile: boolean; state: JourneyLoadState; started: boolean }
+const emptySnapshot: JourneySnapshot = { savedProfile: false, state: { status: 'loading' }, started: false };
+const snapshots = new Map<string, JourneySnapshot>();
+const listeners = new Set<() => void>();
+
+export function subscribeJourney(listener: () => void) {
+  listeners.add(listener);
+  return () => { listeners.delete(listener); };
+}
+export function getJourneySnapshot(profileKey: string | null): JourneySnapshot {
+  return profileKey ? snapshots.get(profileKey) ?? emptySnapshot : emptySnapshot;
+}
+function publish(profileKey: string, snapshot: JourneySnapshot) {
+  snapshots.set(profileKey, snapshot);
+  listeners.forEach(listener => listener());
+}
+export function markProfileSaved(profileKey: string) {
+  publish(profileKey, { ...getJourneySnapshot(profileKey), savedProfile: true });
+}
 const missingCodes = new Set([
   'major_missing', 'interests_missing', 'graduation_year_missing', 'gpa_missing',
   'class_rank_missing', 'academic_test_scores_missing', 'english_test_scores_missing',
@@ -218,6 +241,8 @@ export function readAdmissionJourney(value: unknown): AdmissionJourney {
 
 export function clearJourneyCache() {
   requests.clear();
+  snapshots.clear();
+  listeners.forEach(listener => listener());
 }
 
 export function loadJourney(profileKey: string, options: { refresh?: boolean } = {}): Promise<AdmissionJourney> {
@@ -226,8 +251,27 @@ export function loadJourney(profileKey: string, options: { refresh?: boolean } =
   if (existing) return existing;
   const request = createApiClient().get<unknown>(
     `profiles/${encodeURIComponent(profileKey)}/journey/?seed_order_start=1&seed_order_end=100`,
-  ).then(readAdmissionJourney);
+  ).then(value => {
+    const journey = readAdmissionJourney(value);
+    if (journey.profile_key !== profileKey) throw new InvalidJourneyResponseError();
+    // A save can invalidate an in-flight request. It must never republish old data.
+    if (requests.get(profileKey) === request) {
+      publish(profileKey, { savedProfile: true, started: true, state: { status: 'ready', journey } });
+    }
+    return journey;
+  });
   requests.set(profileKey, request);
-  void request.catch(() => { if (requests.get(profileKey) === request) requests.delete(profileKey); });
+  publish(profileKey, { ...getJourneySnapshot(profileKey), started: true, state: { status: 'loading' } });
+  void request.catch(error => {
+    if (requests.get(profileKey) !== request) return;
+    requests.delete(profileKey);
+    const profileMissing = error instanceof ApiError && error.status === 404 && error.envelope?.error.code === 'profile_not_found';
+    publish(profileKey, {
+      savedProfile: !profileMissing && getJourneySnapshot(profileKey).savedProfile, started: true,
+      state: { status: 'error', profileMissing, message: error instanceof InvalidJourneyResponseError
+        ? 'Talap received an unexpected journey response. Please try again.'
+        : 'Talap could not load your journey. Please check your connection and try again.' },
+    });
+  });
   return request;
 }

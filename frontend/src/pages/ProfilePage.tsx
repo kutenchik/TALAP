@@ -47,7 +47,7 @@ export function ProfilePage({ onNavigationLock }: ProfilePageProps) {
   return <div className="page-content profile-page">
     <div className="page-heading">
       <Badge>YOUR STARTING POINT</Badge>
-      <h2 className="page-title">Let’s get to know you</h2>
+      <h1 className="page-title">Let’s get to know you</h1>
       <p>Share a few details so we can build your personalized admissions route.</p>
     </div>
     <p className="caption profile-intro">* Required. Leave optional information blank if you don’t know it yet.</p>

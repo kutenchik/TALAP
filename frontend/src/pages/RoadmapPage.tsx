@@ -5,7 +5,6 @@ import { Badge, Card, EmptyState, ErrorState, LoadingState } from '../components
 import { DesktopShell } from '../layouts/DesktopShell';
 import { roadmapPriorityLabels, roadmapPriorityOrder } from '../lib/roadmapLabels';
 import type { AdmissionJourney, RoadmapItem } from '../types/journey';
-import { useCompareSelection } from './useCompareSelection';
 import { useJourney } from './useJourney';
 
 function RoadmapContextPanel() {
@@ -41,11 +40,9 @@ function RoadmapActions({ state }: { state: AdmissionJourney['roadmap']['roadmap
 
 function RoadmapResults({ journey }: { journey: AdmissionJourney }) {
   const recommendationItems = journey.recommendations?.recommendations ?? [];
-  const { selected } = useCompareSelection(recommendationItems);
-  const compareCompleted = selected.length >= 2;
   const names = new Map(recommendationItems.map(item => [item.institution.ipeds_unitid, item.institution.name]));
   const roadmap = journey.roadmap;
-  return <DesktopShell currentStep={5} completedSteps={compareCompleted ? [1, 2, 3, 4] : [1, 2, 3]} contextPanel={<RoadmapContextPanel />}><div className="page-content roadmap-page"><header className="page-heading"><Badge>ROADMAP</Badge><h2 className="page-title">Your admissions roadmap</h2><p>These are the next actions supported by your current profile and university evidence.</p></header>
+  return <DesktopShell currentStep={5} contextPanel={<RoadmapContextPanel />}><div className="page-content roadmap-page"><header className="page-heading"><Badge>ROADMAP</Badge><h1 className="page-title">Your admissions roadmap</h1><p>These are the next actions supported by your current profile and university evidence.</p></header>
     {roadmap.roadmap_state === 'no_blocking_actions' && <div className="roadmap-clear-state"><CircleCheckBig aria-hidden="true" /><div><h3>No blocking actions are currently identified from the available evidence.</h3><p>Unavailable evidence may still require review.</p></div></div>}
     {roadmap.items.length > 0 && <PriorityGroups items={roadmap.items} names={names} />}
     {roadmap.items.length === 0 && roadmap.roadmap_state !== 'no_blocking_actions' && <EmptyState title="No roadmap actions available" description="Your current journey did not return any actions to display." />}
@@ -56,7 +53,7 @@ function RoadmapResults({ journey }: { journey: AdmissionJourney }) {
 export function RoadmapPage() {
   const { state, retry } = useJourney();
   if (state.status === 'ready') return <RoadmapResults journey={state.journey} />;
-  return <DesktopShell currentStep={5} completedSteps={[1, 2, 3]} contextPanel={<RoadmapContextPanel />}><div className="page-content roadmap-page"><header className="page-heading"><Badge>ROADMAP</Badge><h2 className="page-title">Your admissions roadmap</h2><p>These are the next actions supported by your current profile and university evidence.</p></header>
-    {state.status === 'loading' ? <LoadingState message="Loading your admissions roadmap..." /> : <ErrorState message="Talap could not load your roadmap. Please try again." onRetry={retry} />}
+  return <DesktopShell currentStep={5} contextPanel={<RoadmapContextPanel />}><div className="page-content roadmap-page"><header className="page-heading"><Badge>ROADMAP</Badge><h1 className="page-title">Your admissions roadmap</h1><p>These are the next actions supported by your current profile and university evidence.</p></header>
+    {state.status === 'loading' ? <LoadingState message="Loading your admissions roadmap..." /> : <ErrorState message={state.message} onRetry={retry} />}
   </div></DesktopShell>;
 }

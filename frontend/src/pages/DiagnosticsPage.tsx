@@ -40,16 +40,16 @@ function DiagnosticSummary({ diagnostic }: { diagnostic: ApplicantDiagnostic }) 
   const gpa = diagnostic.academics.gpa;
   const rank = diagnostic.academics.class_rank;
   return <div className="diagnostic-grid">
-    <Card className="diagnostic-card"><span className="diagnostic-card-icon"><GraduationCap aria-hidden="true" /></span><h3>Academic profile</h3><dl>
+    <Card className="diagnostic-card"><span className="diagnostic-card-icon"><GraduationCap aria-hidden="true" /></span><h4>Academic profile</h4><dl>
       <ValueRow label="GPA" value={gpa.state === 'provided' && gpa.gpa_value !== null ? `${numberText(gpa.gpa_value)}${gpa.gpa_scale !== null ? ` / ${numberText(gpa.gpa_scale)}` : ''}` : 'Not provided'} />
       <ValueRow label="Weighting" value={weightingLabels[gpa.gpa_weighting]} />
       <ValueRow label="Graduation year" value={diagnostic.academics.graduation_year?.toString() ?? 'Not provided'} />
       <ValueRow label="Class rank" value={rank.state === 'provided' && rank.class_rank !== null ? `${rank.class_rank}${rank.class_size !== null ? ` of ${rank.class_size}` : ''}` : 'Not provided'} />
-    </dl><div className="diagnostic-subsection"><h4>SAT and ACT attempts</h4><Attempts attempts={diagnostic.testing.attempts} emptyText="No SAT or ACT score provided" /></div></Card>
-    <Card className="diagnostic-card"><span className="diagnostic-card-icon"><Languages aria-hidden="true" /></span><h3>English testing</h3><Attempts attempts={diagnostic.english.attempts} emptyText="No English test score provided" /></Card>
-    <Card className="diagnostic-card"><span className="diagnostic-card-icon"><BookOpen aria-hidden="true" /></span><h3>Study direction</h3><dl><ValueRow label="Mode" value={studyModeLabels[diagnostic.goal.mode]} /></dl>
-      <div className="diagnostic-subsection"><h4>{diagnostic.goal.mode === 'known_major' ? 'Submitted CIP codes' : 'Submitted interests'}</h4><StateList states={diagnostic.goal.mode === 'known_major' ? diagnostic.goal.intended_cip_codes : diagnostic.goal.interests} emptyText="Not provided" /></div></Card>
-    <Card className="diagnostic-card"><span className="diagnostic-card-icon"><CircleDollarSign aria-hidden="true" /></span><h3>Financial context</h3><dl>
+    </dl><div className="diagnostic-subsection"><h5>SAT and ACT attempts</h5><Attempts attempts={diagnostic.testing.attempts} emptyText="No SAT or ACT score provided" /></div></Card>
+    <Card className="diagnostic-card"><span className="diagnostic-card-icon"><Languages aria-hidden="true" /></span><h4>English testing</h4><Attempts attempts={diagnostic.english.attempts} emptyText="No English test score provided" /></Card>
+    <Card className="diagnostic-card"><span className="diagnostic-card-icon"><BookOpen aria-hidden="true" /></span><h4>Study direction</h4><dl><ValueRow label="Mode" value={studyModeLabels[diagnostic.goal.mode]} /></dl>
+      <div className="diagnostic-subsection"><h5>{diagnostic.goal.mode === 'known_major' ? 'Submitted CIP codes' : 'Submitted interests'}</h5><StateList states={diagnostic.goal.mode === 'known_major' ? diagnostic.goal.intended_cip_codes : diagnostic.goal.interests} emptyText="Not provided" /></div></Card>
+    <Card className="diagnostic-card"><span className="diagnostic-card-icon"><CircleDollarSign aria-hidden="true" /></span><h4>Financial context</h4><dl>
       <ValueRow label="Annual budget" value={diagnostic.financial.annual_budget_usd === null ? 'Not provided' : budgetFormatter.format(diagnostic.financial.annual_budget_usd)} />
       <ValueRow label="Financial aid needed" value={yesNo(diagnostic.financial.needs_financial_aid)} />
     </dl></Card>
@@ -89,7 +89,7 @@ function ReadyDiagnostic({ journey }: { journey: AdmissionJourney }) {
 }
 
 export function DiagnosticsPage({ state, onRetry }: { state: JourneyLoadState; onRetry: () => void }) {
-  return <div className="page-content diagnostics-page"><header className="page-heading diagnostics-heading"><Badge>DIAGNOSTICS</Badge><h2 className="page-title">Your applicant diagnostic</h2><p>Here’s what Talap can confirm from the information you provided.</p></header>
+  return <div className="page-content diagnostics-page"><header className="page-heading diagnostics-heading"><Badge>DIAGNOSTICS</Badge><h1 className="page-title">Your applicant diagnostic</h1><p>Here’s what Talap can confirm from the information you provided.</p></header>
     {state.status === 'loading' && <LoadingState message="Loading your diagnostic…" />}
     {state.status === 'error' && <ErrorState message={state.message} onRetry={onRetry} />}
     {state.status === 'ready' && <ReadyDiagnostic journey={state.journey} />}

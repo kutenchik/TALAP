@@ -1,48 +1,40 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useSyncExternalStore } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ApiError } from '../lib/api';
-import { InvalidJourneyResponseError, loadJourney } from '../lib/journey';
+import { getJourneySnapshot, loadJourney, subscribeJourney, type JourneyLoadState } from '../lib/journey';
 import { readLocalProfileKey } from '../lib/profiles';
-import type { AdmissionJourney } from '../types/journey';
+import { clearCompareSelection } from '../lib/compareSelection';
 
-export type JourneyLoadState =
-  | { status: 'loading' }
-  | { status: 'ready'; journey: AdmissionJourney }
-  | { status: 'error'; message: string };
+export type { JourneyLoadState } from '../lib/journey';
+
+// The shell observes the same service as the pages without starting extra requests.
+export function useJourneySnapshot() {
+  let profileKey: string | null = null;
+  let storageUnavailable = false;
+  try { profileKey = readLocalProfileKey(); } catch { storageUnavailable = true; }
+  const snapshot = useSyncExternalStore(subscribeJourney, () => getJourneySnapshot(profileKey));
+  return { ...snapshot, profileKey, storageUnavailable };
+}
 
 export function useJourney() {
   const navigate = useNavigate();
-  const [requestVersion, setRequestVersion] = useState(0);
-  const [state, setState] = useState<JourneyLoadState>({ status: 'loading' });
-
+  const { state, started, profileKey, storageUnavailable } = useJourneySnapshot();
+  const profileMissing = state.status === 'error' && state.profileMissing;
   useEffect(() => {
-    const profileKey = readLocalProfileKey();
-    if (!profileKey) {
+    if (storageUnavailable) return;
+    if (!profileKey || profileMissing) {
+      clearCompareSelection();
       navigate('/profile', { replace: true });
-      return;
+    } else if (!started) {
+      void loadJourney(profileKey).catch(() => { /* The shared service publishes a safe error. */ });
     }
-    let active = true;
-    void loadJourney(profileKey, { refresh: requestVersion > 0 }).then(journey => {
-      if (active) setState({ status: 'ready', journey });
-    }).catch(error => {
-      if (!active) return;
-      if (error instanceof ApiError && error.status === 404 && error.envelope?.error.code === 'profile_not_found') {
-        navigate('/profile', { replace: true });
-        return;
-      }
-      setState({
-        status: 'error',
-        message: error instanceof InvalidJourneyResponseError
-          ? 'Talap received an unexpected journey response. Please try again.'
-          : 'Talap could not load your diagnostic. Please check your connection and try again.',
-      });
-    });
-    return () => { active = false; };
-  }, [navigate, requestVersion]);
+  }, [navigate, profileKey, profileMissing, storageUnavailable, started]);
 
   const retry = useCallback(() => {
-    setState({ status: 'loading' });
-    setRequestVersion(version => version + 1);
-  }, []);
-  return { state, retry };
+    if (storageUnavailable) { navigate('/profile', { replace: true }); return; }
+    if (profileKey) void loadJourney(profileKey, { refresh: true }).catch(() => { /* Published by the service. */ });
+  }, [navigate, profileKey, storageUnavailable]);
+  const visibleState: JourneyLoadState = storageUnavailable
+    ? { status: 'error', message: 'Talap cannot access your local profile identity. Allow browser storage, then try again.' }
+    : state;
+  return { state: visibleState, retry };
 }

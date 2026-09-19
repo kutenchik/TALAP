@@ -69,7 +69,7 @@ describe('Diagnostics journey experience', () => {
     });
     vi.stubGlobal('fetch', fetcher);
     renderDiagnostics();
-    expect(await screen.findByRole('alert')).toHaveTextContent('could not load your diagnostic');
+    expect(await screen.findByRole('alert')).toHaveTextContent('could not load your journey');
     expect(screen.queryByText('Private detail')).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Try again' }));
     expect(await screen.findByRole('heading', { name: 'Your submitted details' })).toBeVisible();

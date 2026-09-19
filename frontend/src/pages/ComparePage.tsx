@@ -80,7 +80,7 @@ function SelectionRequired() {
 }
 
 function ComparisonTable({ items, onRemove }: { items: UniversityRecommendation[]; onRemove: (unitid: number) => void }) {
-  return <div className="comparison-table-wrap"><table className="comparison-table">
+  return <div className="comparison-table-wrap" role="region" aria-label="Scrollable university comparison" tabIndex={0}><table className="comparison-table">
     <caption>Factual comparison of selected universities</caption>
     <thead><tr><th scope="col" className="comparison-row-heading">Evidence</th>{items.map(item => <th scope="col" key={item.institution.ipeds_unitid}>
       <div className="comparison-university"><span className="university-initial" aria-hidden="true">{item.institution.name.charAt(0).toUpperCase()}</span><div><h3>{item.institution.name}</h3><p><MapPin size={13} aria-hidden="true" />{item.institution.state || 'Location unavailable'}</p></div></div>
@@ -108,11 +108,10 @@ function CompareResults({ recommendations }: { recommendations: UniversityRecomm
 
 export function ComparePage() {
   const { state, retry } = useJourney();
-  const comparisonReady = state.status === 'ready' && state.journey.journey_state === 'recommendations_ready';
   const context = <Card className="journey-card"><span className="context-icon"><Scale aria-hidden="true" /></span><h2 className="section-title">How to compare</h2><ul className="diagnostic-context-list"><li>Compare evidence rather than a single score.</li><li>Missing evidence is not a negative fact.</li><li>Actions show what should be verified next.</li></ul><div className="context-note"><GitCompareArrows size={18} aria-hidden="true" /><p>Talap presents the available facts without choosing an institution for you.</p></div></Card>;
-  return <DesktopShell currentStep={4} completedSteps={comparisonReady ? [1, 2, 3] : []} contextPanel={context}><div className="page-content compare-page"><header className="page-heading"><Badge>COMPARE</Badge><h2 className="page-title">Compare universities</h2><p>Review the evidence Talap currently has for each option.</p></header>
+  return <DesktopShell currentStep={4} contextPanel={context}><div className="page-content compare-page"><header className="page-heading"><Badge>COMPARE</Badge><h1 className="page-title">Compare universities</h1><p>Review the evidence Talap currently has for each option.</p></header>
     {state.status === 'loading' && <LoadingState message="Loading your university comparison..." />}
-    {state.status === 'error' && <ErrorState message="Talap could not load your comparison. Please try again." onRetry={retry} />}
+    {state.status === 'error' && <ErrorState message={state.message} onRetry={retry} />}
     {state.status === 'ready' && (state.journey.journey_state === 'recommendations_ready'
       ? <CompareResults key={state.journey.profile_key} recommendations={state.journey.recommendations?.recommendations ?? []} />
       : <SelectionRequired />)}

@@ -1,5 +1,8 @@
-import { useState } from 'react';
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Navigate, Route, Routes, useNavigate } from 'react-router-dom';
+import { clearJourneyCache } from '../lib/journey';
+import { clearCompareSelection } from '../lib/compareSelection';
+import { LOCAL_PROFILE_KEY } from '../lib/profiles';
 import { DesktopShell } from '../layouts/DesktopShell';
 import { ProfilePage } from '../pages/ProfilePage';
 import { DiagnosticsContextPanel, DiagnosticsPage } from '../pages/DiagnosticsPage';
@@ -17,12 +20,23 @@ function ProfileRoute() {
 
 function DiagnosticsRoute() {
   const journey = useJourney();
-  return <DesktopShell currentStep={2} completedSteps={[1]} contextPanel={<DiagnosticsContextPanel state={journey.state} />}>
+  return <DesktopShell currentStep={2} contextPanel={<DiagnosticsContextPanel state={journey.state} />}>
     <DiagnosticsPage state={journey.state} onRetry={journey.retry} />
   </DesktopShell>;
 }
 
 export function App() {
+  const navigate = useNavigate();
+  useEffect(() => {
+    const identityChanged = (event: StorageEvent) => {
+      if (event.key !== null && event.key !== LOCAL_PROFILE_KEY) return;
+      clearJourneyCache();
+      clearCompareSelection();
+      navigate('/profile', { replace: true });
+    };
+    window.addEventListener('storage', identityChanged);
+    return () => window.removeEventListener('storage', identityChanged);
+  }, [navigate]);
   return <Routes>
     <Route path="/" element={<Navigate to="/profile" replace />} />
     <Route path="/profile" element={<ProfileRoute />} />
@@ -31,7 +45,7 @@ export function App() {
     <Route path="/compare" element={<ComparePage />} />
     <Route path="/roadmap" element={<RoadmapPage />} />
     <Route path="*" element={<DesktopShell currentStep={1}><div className="page-content">
-      <h2 className="page-title">Page not found</h2><a className="text-link" href="/profile">Return to your profile</a>
+      <h1 className="page-title">Page not found</h1><a className="text-link" href="/profile">Return to your profile</a>
     </div></DesktopShell>} />
   </Routes>;
 }

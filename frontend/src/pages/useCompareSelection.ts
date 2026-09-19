@@ -1,31 +1,28 @@
 import { useEffect, useState } from 'react';
 import type { UniversityRecommendation } from '../types/journey';
+import { cleanSelection, eligibleUnitids, readCompareSelection, writeCompareSelection } from '../lib/compareSelection';
+import { readLocalProfileKey } from '../lib/profiles';
 
-export const COMPARE_STORAGE_KEY = 'talap.compareUnitids';
-export function eligibleUnitids(items: UniversityRecommendation[]) {
-  return items.filter(item => item.recommendation_state !== 'excluded_by_applicant').map(item => item.institution.ipeds_unitid);
-}
+export { COMPARE_STORAGE_KEY, eligibleUnitids } from '../lib/compareSelection';
 export function useCompareSelection(items: UniversityRecommendation[]) {
   const eligible = eligibleUnitids(items);
-  const [selected, setSelected] = useState<number[]>(() => {
-    try {
-      const stored: unknown = JSON.parse(sessionStorage.getItem(COMPARE_STORAGE_KEY) ?? '[]');
-      return Array.isArray(stored) ? [...new Set(stored.filter((id): id is number => typeof id === 'number' && eligible.includes(id)))].slice(0, 3) : [];
-    } catch { return []; }
-  });
+  const profileKey = readLocalProfileKey();
+  const [selection, setSelection] = useState(() => ({ profileKey, ids: readCompareSelection(profileKey, items) }));
+  const selected = cleanSelection(selection.profileKey === profileKey ? selection.ids : [], items);
+  const serialized = JSON.stringify(selected);
   const [storageUnavailable, setStorageUnavailable] = useState(false);
   useEffect(() => {
-    try { sessionStorage.setItem(COMPARE_STORAGE_KEY, JSON.stringify(selected)); }
+    try { writeCompareSelection(profileKey, JSON.parse(serialized)); }
     catch { /* The selection event reports storage failure before navigation is enabled. */ }
-  }, [selected]);
+  }, [profileKey, serialized]);
   function toggle(id: number) {
     if (!eligible.includes(id)) return;
     const next = selected.includes(id) ? selected.filter(value => value !== id) : selected.length < 3 ? [...selected, id] : selected;
     try {
-      sessionStorage.setItem(COMPARE_STORAGE_KEY, JSON.stringify(next));
+      writeCompareSelection(profileKey, next);
       setStorageUnavailable(false);
     } catch { setStorageUnavailable(true); }
-    setSelected(next);
+    setSelection({ profileKey, ids: next });
   }
   return { selected, toggle, storageUnavailable };
 }

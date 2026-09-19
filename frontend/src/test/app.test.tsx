@@ -34,13 +34,14 @@ describe('desktop foundation', () => {
     const journey = readyJourneyFixture();
     localStorage.setItem(LOCAL_PROFILE_KEY, journey.profile_key);
     vi.stubGlobal('fetch', vi.fn(async () => jsonResponse(journey)));
-    renderApp();
+    renderApp('/diagnostics');
+    await screen.findByRole('heading', { name: 'Your submitted details' });
     const nav = screen.getByRole('navigation', { name: 'Application journey' });
     await user.click(within(nav).getByRole('link', { name: /Roadmap/ }));
     expect(await screen.findByRole('heading', { name: 'Your admissions roadmap' })).toBeVisible();
     expect(screen.getByText('No blocking actions are currently identified from the available evidence.')).toBeVisible();
     expect(within(screen.getByRole('navigation', { name: 'Application journey' })).getByRole('link', { current: 'step' })).toHaveTextContent('Roadmap');
-    expect(screen.getAllByText('Completed')).toHaveLength(3);
+    expect(screen.getAllByText('Completed')).toHaveLength(2);
     expect(within(screen.getByRole('navigation', { name: 'Application journey' })).getAllByRole('listitem')[3]).toHaveClass('step-future');
   });
   it('associates labels with working profile controls', async () => {

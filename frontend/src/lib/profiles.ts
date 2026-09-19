@@ -1,7 +1,8 @@
 import { ApiError, createApiClient } from './api';
 import type { ApplicantProfileInput, ApplicantProfileResponse } from '../types/profile';
 import type { CsrfResponse } from '../types/api';
-import { clearJourneyCache } from './journey';
+import { clearJourneyCache, markProfileSaved } from './journey';
+import { clearCompareSelection } from './compareSelection';
 
 export const LOCAL_PROFILE_KEY = 'talap.localProfileKey';
 
@@ -16,6 +17,8 @@ export function getLocalProfileKey(): { key: string; existing: boolean } {
   const key = `talap-local-${crypto.randomUUID()}`;
   // If storage is blocked, report it instead of silently generating a different identity on every visit.
   localStorage.setItem(LOCAL_PROFILE_KEY, key);
+  clearJourneyCache();
+  clearCompareSelection();
   return { key, existing: false };
 }
 
@@ -26,9 +29,11 @@ export async function loadLocalProfile(signal: AbortSignal) {
     const profile = await createApiClient().get<ApplicantProfileResponse>(
       `profiles/${encodeURIComponent(identity.key)}/`, signal,
     );
+    if (!signal.aborted) markProfileSaved(identity.key);
     return { key: identity.key, profile };
   } catch (error) {
     if (error instanceof ApiError && error.status === 404 && error.envelope?.error.code === 'profile_not_found') {
+      if (!signal.aborted) { clearJourneyCache(); clearCompareSelection(); }
       return { key: identity.key, profile: null };
     }
     throw error;
@@ -45,5 +50,7 @@ export async function saveProfile(profile: ApplicantProfileInput, signal: AbortS
   // Persist the backend-normalized representation; do not duplicate its validation.
   const saved = await api.post<ApplicantProfileResponse>('profiles/', validated, csrf.csrfToken, signal);
   clearJourneyCache();
+  clearCompareSelection();
+  markProfileSaved(profile.profile_key);
   return saved;
 }
